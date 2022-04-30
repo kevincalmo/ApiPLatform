@@ -2,7 +2,9 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Core\Annotation\ApiFilter;
 use ApiPlatform\Core\Annotation\ApiResource;
+use ApiPlatform\Core\Bridge\Doctrine\MongoDbOdm\Filter\SearchFilter;
 use App\Repository\PostsRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
@@ -10,25 +12,31 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints\Length;
 
 #[ORM\Entity(repositoryClass: PostsRepository::class)]
-#[ApiResource(
-    collectionOperations: [
-        'get',
-        'post' => [
-            'validation_groups' => [Posts::class, 'validationGroups']
-        ]
-    ],
-    itemOperations: [
-        'put' => [
-            'denormalization_context' => ['groups' => ['put:post:item']],
-            'validation_groups' => [Posts::class, 'validationGroups']
+#[
+    ApiResource(
+        paginationItemsPerPage: 2,
+        paginationMaximumItemsPerPage:2,
+        paginationClientItemsPerPage: true,
+        collectionOperations: [
+            'get',
+            'post' => [
+                'validation_groups' => [Posts::class, 'validationGroups']
+            ]
         ],
-        'delete',
-        'get' => [ //ici posts ne va afficher que l'opération get
-            'normalization_context' => ['groups' => ['read:post:collection', 'read:post:item']]
-            /* read:item correspond à la vision d'un post précis ( ex :"/api/post/21" ) */
+        itemOperations: [
+            'put' => [
+                'denormalization_context' => ['groups' => ['put:post:item']],
+                'validation_groups' => [Posts::class, 'validationGroups']
+            ],
+            'delete',
+            'get' => [ //ici posts ne va afficher que l'opération get
+                'normalization_context' => ['groups' => ['read:post:collection', 'read:post:item']]
+                /* read:item correspond à la vision d'un post précis ( ex :"/api/post/21" ) */
+            ]
         ]
-    ]
-)] //ApiPlatform peut utiliser cette entité 
+    ),
+    ApiFilter(SearchFilter::class, properties: ['id' => 'exact', 'title' => 'partial'])
+] //ApiPlatform peut utiliser cette entité 
 class Posts
 {
     #[ORM\Id]
